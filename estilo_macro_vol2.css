@@ -1,0 +1,110 @@
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0b0f19;
+        color: #e5e7eb;
+        line-height: 1.7;
+        margin: 0;
+        padding: 40px;
+    }
+    
+    h1 {
+        color: #4ade80;
+        font-size: 2.5em;
+        text-align: center;
+        border-bottom: 2px solid #4ade80;
+        padding-bottom: 10px;
+        margin-bottom: 40px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    h2 {
+        color: #facc15;
+        font-size: 1.8em;
+        margin-top: 40px;
+        border-left: 4px solid #facc15;
+        padding-left: 15px;
+    }
+    
+    h3 {
+        color: #60a5fa;
+        font-size: 1.4em;
+        margin-top: 25px;
+    }
+    
+    p {
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        color: #d1d5db;
+        text-align: justify;
+    }
+    
+    ul, ol {
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        padding-left: 25px;
+    }
+    
+    li {
+        margin-bottom: 10px;
+    }
+    
+    strong {
+        color: #ffffff;
+        font-weight: 600;
+    }
+    
+    blockquote {
+        border-left: 4px solid #ef4444;
+        background-color: rgba(239, 68, 68, 0.1);
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+    }
+    
+    .kill-zone {
+        color: #ef4444;
+        font-weight: bold;
+    }
+    
+    .buy-zone {
+        color: #4ade80;
+        font-weight: bold;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 30px 0;
+        background-color: #111827;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    th {
+        background-color: rgba(74, 222, 128, 0.1);
+        color: #4ade80;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .footer {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        color: #6b7280;
+        font-size: 0.9em;
+    }
+    

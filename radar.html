@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quimera Sniper Terminal 🎯</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 stroke=%22%234ade80%22 stroke-width=%228%22 fill=%22none%22/><circle cx=%2250%22 cy=%2250%22 r=%225%22 fill=%22%234ade80%22/><path d=%22M50 0v20M50 80v20M0 50h20M80 50h20%22 stroke=%22%234ade80%22 stroke-width=%228%22/></svg>">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap');
+
+        :root {
+            --bg-color: #0b0f19;
+            --surface-color: rgba(17, 24, 39, 0.85);
+            --surface-light: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(74, 222, 128, 0.2);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-green: #4ade80;
+            --accent-red: #ef4444;
+            --accent-yellow: #facc15;
+            
+            --heat-0: rgba(255,255,255,0.02);
+            --heat-1: rgba(59, 130, 246, 0.4);  /* Azul - Baja Volatilidad */
+            --heat-2: rgba(245, 158, 11, 0.6);  /* Naranja - Media Volatilidad (2 solapamientos) */
+            --heat-3: rgba(239, 68, 68, 0.9);   /* Rojo - Kill Zone (3+ solapamientos) */
+
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background: radial-gradient(circle at center, #111827 0%, var(--bg-color) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .dashboard-wrapper { width: 100%; max-width: 1000px; }
+        
+        .dashboard-container {
+            background: var(--surface-color);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- CLOCK --- */
+        .main-clock-container { text-align: center; margin-bottom: 20px; }
+        .main-clock-title {
+            font-size: 0.9rem; color: var(--accent-green);
+            text-transform: uppercase; letter-spacing: 3px;
+            margin-bottom: 10px; font-weight: 600;
+        }
+        .main-clock-time {
+            font-family: var(--font-mono); font-size: 4.5rem;
+            font-weight: 700; color: #ffffff;
+            text-shadow: 0 0 30px rgba(74, 222, 128, 0.3); line-height: 1; letter-spacing: -2px;
+        }
+
+        /* --- TITLE --- */
+        .app-title {
+            text-align: center; font-size: 2rem; font-weight: 800; color: #fff;
+            margin-bottom: 30px; letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        /* --- SNIPER RADAR --- */
+        .sniper-section {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        
+        .sniper-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .sniper-title {
+            color: var(--accent-green); font-size: 1.1rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 2px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .live-dot {
+            width: 10px; height: 10px; background: var(--accent-green);
+            border-radius: 50%; box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
+        .sniper-info { font-size: 0.8rem; color: var(--text-secondary); font-family: var(--font-mono); }
+
+        .sniper-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+        .sniper-table th, .sniper-table td { padding: 10px 6px; text-align: left; font-size: 0.9rem; letter-spacing: -0.3px; }
+        .sniper-table th { color: var(--text-secondary); font-size: 0.65rem; text-transform: uppercase; border-bottom: none; letter-spacing: 0px; }
+        .sniper-table tr.data-row { background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .sniper-table td { border-bottom: none; border-top: 1px solid rgba(255,255,255,0.02); }
+        .sniper-table td:first-child { border-radius: 8px 0 0 8px; font-weight: 800; color: #fff;}
+        .sniper-table td:last-child { border-radius: 0 8px 8px 0; }
+        
+        .ema-val { font-family: var(--font-mono); font-size: 0.9rem; }
+        .diff-pos { color: var(--accent-green); font-weight: 700; font-family: var(--font-mono); }
+        .diff-neg { color: var(--accent-red); font-weight: 700; font-family: var(--font-mono); }
+        
+        .badge {
+            padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;
+            text-transform: uppercase; display: inline-block;
+        }
+        .badge-bull { background: rgba(74, 222, 128, 0.1); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-cross { background: var(--accent-green); color: #000; box-shadow: 0 0 15px var(--accent-green); animation: pulse 1s infinite; }
+
+        /* --- ALERTAS SECTION --- */
+        .alerts-section {
+            background: rgba(250, 204, 21, 0.05);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 40px;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 30px rgba(250, 204, 21, 0.05);
+        }
+        .alert-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem; background: rgba(0,0,0,0.3); margin-bottom: 5px; border-radius: 8px;
+        }
+        .alert-item:last-child { margin-bottom: 0; }
+        .alert-time { font-family: var(--font-mono); color: var(--text-secondary); width: 80px; }
+        .alert-symbol { font-weight: 800; color: #fff; width: 60px; font-size: 1rem; }
+        .alert-msg { flex-grow: 1; color: var(--accent-yellow); font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(250, 204, 21, 0.4); text-align: center;}
+        .alert-price { font-family: var(--font-mono); color: var(--accent-green); font-weight: bold; width: 100px; text-align: right;}
+
+        /* --- HEATMAP TIMELINE (ALGORÍTMICO) --- */
+        .timeline-section {
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+        }
+
+        .timeline-title {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.85rem; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 1.5px;
+            margin-bottom: 20px; font-weight: 600;
+        }
+        
+        .legend { display: flex; gap: 15px; font-size: 0.7rem; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(48, 1fr); position: relative; gap: 2px; }
+        .timeline-axis { display: grid; grid-template-columns: repeat(24, 1fr); margin-bottom: 8px; padding-left: 1px; }
+        .axis-tick { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-secondary); text-align: left; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 3px; height: 15px; }
+
+        .heatmap-row { display: grid; grid-template-columns: repeat(48, 1fr); gap: 1px; height: 40px; margin-bottom: 15px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.02); }
+        .heat-cell { height: 100%; transition: background 0.3s ease; }
+
+        .tracks-container { display: grid; grid-template-columns: repeat(48, 1fr); gap: 1px; grid-auto-rows: 24px; row-gap: 6px; }
+        .track-bar { border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 0.7rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+        .bg-sydney { background: linear-gradient(90deg, #10b981, #059669); }
+        .bg-tokyo { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .bg-china { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .bg-europe { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .bg-us { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+        .current-time-line { position: absolute; top: 15px; width: 2px; height: calc(100% - 15px); background: var(--accent-green); z-index: 10; box-shadow: 0 0 15px var(--accent-green), 0 0 5px var(--accent-green); transition: left 1s linear; pointer-events: none; display: flex; justify-content: center; }
+        .current-time-line::before { content: ''; position: absolute; top: 0; left: -4px; width: 10px; height: 10px; background: var(--accent-green); border-radius: 50%; box-shadow: 0 0 10px var(--accent-green); }
+        .current-time-label { position: absolute; top: -20px; background: var(--accent-green); color: #000; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); box-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+
+        /* --- TABLE / CARD LAYOUT --- */
+        table.standard-table { width: 100%; border-collapse: collapse; }
+        table.standard-table th, table.standard-table td { padding: 18px 20px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        table.standard-table th { background: rgba(0, 0, 0, 0.3); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); font-weight: 600; }
+        table.standard-table th:first-child { border-top-left-radius: 12px; }
+        table.standard-table th:last-child { border-top-right-radius: 12px; }
+        table.standard-table tr { transition: background-color 0.2s ease; }
+        table.standard-table tr:hover td { background-color: var(--surface-light); }
+        table.standard-table tr:last-child td { border-bottom: none; }
+        table.standard-table td { font-size: 0.95rem; color: var(--text-primary); font-weight: 500; }
+        
+        .status-open { color: var(--accent-green); font-weight: 600; text-shadow: 0 0 10px rgba(74,222,128,0.4); }
+        .status-closed { color: var(--accent-red); font-weight: 600; opacity: 0.8; }
+        .countdown { font-family: var(--font-mono); color: var(--accent-yellow); font-weight: 700; letter-spacing: 1px;}
+        .time-cell { font-family: var(--font-mono); color: var(--text-secondary); }
+
+
+        /* --- FORWARD TESTING SECTION --- */
+        .ft-section {
+            background: rgba(74, 222, 128, 0.05);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        .ft-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .winrate-display { font-size: 2.5rem; font-family: var(--font-mono); font-weight: 800; color: var(--accent-green); text-shadow: 0 0 15px rgba(74, 222, 128, 0.5); }
+        .stats-summary { font-size: 0.9rem; color: var(--text-secondary); text-align: right; }
+        .ft-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem;}
+        .ft-table th, .ft-table td { padding: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .ft-table th { color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase; }
+        .status-win { color: var(--accent-green); font-weight: bold; }
+        .status-loss { color: var(--accent-red); font-weight: bold; }
+        .ft-status-open { color: var(--accent-yellow); font-weight: bold; }
+
+        @media (max-width: 768px) {
+
+            .dashboard-container { padding: 25px 15px; border-radius: 20px; }
+            .main-clock-time { font-size: 3rem; }
+            .app-title { font-size: 1.5rem; }
+            
+            table.standard-table, table.standard-table thead, table.standard-table tbody, table.standard-table th, table.standard-table td, table.standard-table tr { display: block; }
+            table.standard-table thead { display: none; }
+            table.standard-table tr { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 15px; padding: 10px 0; }
+            table.standard-table tr:hover td { background-color: transparent; }
+            table.standard-table td { padding: 12px 20px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.02); display: flex; justify-content: space-between; align-items: center; }
+            table.standard-table td::before { content: attr(data-label); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); font-weight: 600; }
+            table.standard-table td:last-child { border-bottom: none; }
+            
+            .sniper-table, .sniper-table tbody, .sniper-table tr, .sniper-table td { display: block; width: 100%; }
+            .sniper-table thead { display: none; }
+            .sniper-table tr.data-row { margin-bottom: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.05); }
+            .sniper-table td { display: flex; justify-content: space-between; padding: 8px; }
+            .sniper-table td::before { content: attr(data-label); font-size: 0.65rem; text-transform: uppercase; color: var(--text-secondary); }
+        }
+        .sniper-tab {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-mono);
+            font-weight: bold;
+        }
+        .sniper-tab.active {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+        .sniper-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <div class="dashboard-container">
+            
+            <div class="app-title">QUIMERA SNIPER RADAR</div>
+            <div style="text-align: center; margin-bottom: 20px;"><a href="quimera_terminal.html" style="color: var(--accent-blue); text-decoration: none; font-size: 0.9rem;">⬅ Volver a Terminal</a></div>
+            
+            <div class="main-clock-container">
+                <div class="main-clock-title">Hora Local Madrid</div>
+                <div class="main-clock-time" id="main-clock">--:--:--</div>
+            </div>
+
+            <!-- SNIPER RADAR MODULE -->
+            <div class="sniper-section">
+                <div class="sniper-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="sniper-title">
+                        <div class="live-dot"></div>
+                        RADAR SNIPER BOT 
+                    </div>
+                    <div class="sniper-info" id="sniper-info">Conectando...</div>
+                </div>
+
+                <div class="sniper-tabs" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button class="sniper-tab active" data-tf="ALL">TODAS</button>
+                    <button class="sniper-tab" data-tf="15m">15 MINUTOS</button>
+                    <button class="sniper-tab" data-tf="30m">30 MINUTOS</button>
+                    <button class="sniper-tab" data-tf="1h">1 HORA</button>
+                </div>
+                
+                <table class="sniper-table">
+                    <thead>
+                        <tr>
+                            <th>TOKEN</th><th>TF</th>
+                            <th>PRECIO</th>
+                            <th>EMA 9</th>
+                            <th>EMA 21</th>
+                            <th>DIST.</th>
+                            <th>PROB.</th>
+                            <th>MOMENTUM (MACD/RSI/VOL)</th>
+                            <th>CAPITAL</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sniper-body">
+                        <tr><td colspan="9" style="text-align: center; color: var(--text-secondary);">Esperando datos de sniper_data.json...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <script>
+        // --- LOGIC FOR SNIPER RADAR ---
+        let currentTab = 'ALL';
+        
+        document.querySelectorAll('.sniper-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.sniper-tab').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentTab = e.target.getAttribute('data-tf');
+                fetchSniperData(); // Re-render table
+            });
+        });
+
+        async function fetchSniperData() {
+            try {
+                // Agregar un timestamp para evitar caché agresivo del navegador
+                const response = await fetch('sniper_data.json?t=' + new Date().getTime());
+                if (!response.ok) return;
+                const data = await response.json();
+                
+                document.getElementById('sniper-info').textContent = `ACTUALIZADO: ${data.last_updated} | TEMP: ${data.timeframe}`;
+                
+                const tbody = document.getElementById('sniper-body');
+                if (tbody) { tbody.innerHTML = '';
+                
+                // Ordenar: mayor probabilidad primero. En caso de empate, menor distancia absoluta primero
+                data.coins.sort((a, b) => {
+                    let probA = parseInt(a.probabilidad || 0);
+                    let probB = parseInt(b.probabilidad || 0);
+                    if (probB !== probA) return probB - probA;
+                    
+                    let distA = Math.abs(parseFloat(a.distancia_porcentaje || 0));
+                    let distB = Math.abs(parseFloat(b.distancia_porcentaje || 0));
+                    return distA - distB;
+                });
+                
+                let filteredCoins = data.coins;
+                if (currentTab !== 'ALL') {
+                    filteredCoins = data.coins.filter(c => c.timeframe === currentTab);
+                }
+                
+                filteredCoins.forEach(coin => {
+                    let badgeHtml = '';
+                    if (coin.estado.includes("CRUCE DORADO")) {
+                        badgeHtml = `<span style="font-size: 1.2rem; animation: pulse 1s infinite;" title="${coin.estado}">🚀</span>`;
+                    } else if (coin.estado.includes("CRUCE BAJISTA")) {
+                        badgeHtml = `<span style="font-size: 1.2rem; animation: pulse 1s infinite;" title="${coin.estado}">🩸</span>`;
+                    } else if (coin.estado.includes("ALCISTA")) {
+                        badgeHtml = `<span style="font-size: 1.5rem; color: #00ff88; text-shadow: 0px 0px 5px rgba(0, 255, 136, 0.6);" title="${coin.estado}">⬆</span>`;
+                    } else {
+                        badgeHtml = `<span style="font-size: 1.5rem; color: #ff4444; text-shadow: 0px 0px 5px rgba(255, 68, 68, 0.6);" title="${coin.estado}">⬇</span>`;
+                    }
+                    
+                    let distColor = coin.distancia_porcentaje > 0 ? '#00ff88' : '#ff4444';
+                    let diffSign = coin.distancia_porcentaje > 0 ? '+' : '';
+                    
+                    let probColor = '#ffffff';
+                    if (coin.probabilidad && coin.probabilidad.includes("95%")) probColor = '#00ff88';
+                    else if (coin.probabilidad && coin.probabilidad.includes("80%")) probColor = '#00cc66';
+                    else if (coin.probabilidad && coin.probabilidad.includes("70%")) probColor = '#aaaaaa';
+                    else if (coin.probabilidad && coin.probabilidad.includes("60%")) probColor = '#ff4444';
+                    
+                    let macdHtml = coin.macd_bullish ? '<span style="color:#00ff88; font-weight: bold;">MACD ⬆</span>' : '<span style="color:#ff4444; opacity: 0.8;">MACD ⬇</span>';
+                    let squeezeHtml = coin.is_squeeze ? '<span title="Squeeze (Compresión Extrema) - Explosión inminente!" style="animation: pulse 0.8s infinite; margin-left: 5px; font-size: 1.2em;">💥</span>' : '';
+                    
+                    tbody.innerHTML += `
+                        <tr class="data-row">
+                            <td data-label="Token" style="font-weight: 800; font-size: 1.1em;">${coin.symbol} ${squeezeHtml}</td>
+                            <td data-label="TF" style="color: #4ade80; font-family: var(--font-mono); font-weight: bold;">${coin.timeframe}</td>
+                            <td data-label="Precio" class="ema-val">$${coin.price}</td>
+                            <td data-label="EMA 9" class="ema-val">${coin.ema9}</td>
+                            <td data-label="EMA 21" class="ema-val">${coin.ema21}</td>
+                            <td data-label="Distancia" style="color: ${distColor}; font-weight: bold; font-family: var(--font-mono);">${diffSign}${coin.distancia_porcentaje}%</td>
+                            <td data-label="Probabilidad" style="color: ${probColor}; font-weight: bold; font-family: var(--font-mono);">${coin.probabilidad || 'N/A'}</td>
+                            <td data-label="MOMENTUM" style="font-family: var(--font-mono); font-size: 0.85em; color: #b3b3b3;">
+                                ${macdHtml} <br>
+                                RSI: <span style="color: ${coin.rsi > 70 ? '#ff4444' : (coin.rsi < 30 ? '#00ff88' : '#fff')}">${coin.rsi || '--'}</span> | 
+                                VOL: ${coin.volumen || '--'}
+                            </td>
+                            <td data-label="Capital" style="color: #00e5ff; font-family: var(--font-mono); font-size: 0.95em;">
+                                ${coin.capital || 'N/A'}<br>
+                                <span style="font-size: 0.8em; color: #ff4444;">SL: $${coin.sl}</span><br>
+                                <span style="font-size: 0.8em; color: #00ff88;">TP: $${coin.tp}</span>
+                            </td>
+                            <td data-label="ACT" style="text-align: center;">${badgeHtml}</td>
+                        </tr>
+                    `;
+                });
+                }
+                
+                // Actualizar Panel de Alertas
+                const alertsList = document.getElementById('alerts-list');
+                if (alertsList && data.alerts && data.alerts.length > 0) {
+                    alertsList.innerHTML = data.alerts.map(a => `
+                        <div class="alert-item">
+                            <span class="alert-time">${a.time} <br><span style="color:#4ade80; font-size: 0.8em">${a.timeframe}</span></span>
+                            <span class="alert-symbol">${a.symbol}</span>
+                            <span class="alert-msg">${a.message}</span>
+                            <span class="alert-price">$${a.price}</span>
+                        </div>
+                    `).join('');
+                } else if (alertsList) {
+                    alertsList.innerHTML = '<div style="text-align:center; color:gray; padding: 20px;">No hay alertas registradas en memoria todavía.</div>';
+                }
+                
+            } catch (error) {
+                console.error("Error fetching sniper data:", error);
+            }
+        }
+
+        // --- LOGIC FOR MARKETS ---
+        const markets = [
+            { id: 'sydney', name: '🇦🇺 Sídney', colorClass: 'bg-sydney', openHour: 0, openMin: 0, closeHour: 7, closeMin: 0 },
+            { id: 'tokyo', name: '🇯🇵 Tokio', colorClass: 'bg-tokyo', openHour: 2, openMin: 0, closeHour: 8, closeMin: 0 },
+            { id: 'china', name: '🇨🇳 China', colorClass: 'bg-china', openHour: 3, openMin: 30, closeHour: 10, closeMin: 0 },
+            { id: 'london', name: '🇬🇧 Londres', colorClass: 'bg-europe', openHour: 9, openMin: 0, closeHour: 17, closeMin: 30 },
+            { id: 'madrid', name: '🇪🇸 Madrid', colorClass: 'bg-europe', openHour: 9, openMin: 0, closeHour: 17, closeMin: 30 },
+            { id: 'xetra', name: '🇩🇪 Xetra', colorClass: 'bg-europe', openHour: 9, openMin: 0, closeHour: 17, closeMin: 30 },
+            { id: 'us', name: '🇺🇸 Wall St', colorClass: 'bg-us', openHour: 15, openMin: 30, closeHour: 22, closeMin: 0 }
+        ];
+
+        function getGridColumn(hour, minute) {
+            return (hour * 2) + Math.floor(minute / 30) + 1;
+        }
+
+        function initAlgorithmicHeatmap() {
+            const axisContainer = document.getElementById('timeline-axis');
+            let axisHtml = '';
+            for(let i=0; i<24; i++) {
+                let label = (i % 2 === 0) ? `${i.toString().padStart(2, '0')}h` : '';
+                axisHtml += `<div class="axis-tick">${label}</div>`;
+            }
+            axisContainer.innerHTML = axisHtml;
+
+            const heatRow = document.getElementById('heatmap-row');
+            let overlapCounts = new Array(48).fill(0);
+            markets.forEach(m => {
+                let startIdx = (m.openHour * 2) + Math.floor(m.openMin / 30);
+                let endIdx = (m.closeHour * 2) + Math.floor(m.closeMin / 30);
+                for(let i = startIdx; i < endIdx; i++) if(i < 48) overlapCounts[i]++;
+            });
+            let heatHtml = '';
+            for(let i=0; i<48; i++) {
+                let count = overlapCounts[i];
+                let bgVar = 'var(--heat-0)';
+                if(count === 1) bgVar = 'var(--heat-1)';
+                if(count === 2) bgVar = 'var(--heat-2)';
+                if(count >= 3) bgVar = 'var(--heat-3)';
+                heatHtml += `<div class="heat-cell" style="background: ${bgVar}"></div>`;
+            }
+            heatRow.innerHTML = heatHtml;
+
+            const tracksContainer = document.getElementById('tracks-container');
+            let tracksHtml = '';
+            markets.forEach((m, index) => {
+                let startCol = getGridColumn(m.openHour, m.openMin);
+                let endCol = getGridColumn(m.closeHour, m.closeMin);
+                tracksHtml += `<div class="track-bar ${m.colorClass}" style="grid-column-start: ${startCol}; grid-column-end: ${endCol}; grid-row: ${index + 1};">${m.name}</div>`;
+            });
+            tracksContainer.innerHTML = tracksHtml;
+        }
+
+        function getNextTime(now, targetHour, targetMin) {
+            let target = new Date(now);
+            target.setHours(targetHour, targetMin, 0, 0);
+            if (now.getTime() > target.getTime()) target.setDate(target.getDate() + 1);
+            return target;
+        }
+
+        function formatCountdown(diffMs) {
+            let totalSeconds = Math.floor(diffMs / 1000);
+            let h = Math.floor(totalSeconds / 3600);
+            let m = Math.floor((totalSeconds % 3600) / 60);
+            let s = totalSeconds % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function updateDashboard() {
+            const now = new Date();
+            const madridStr = now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' });
+            const madridDate = new Date(madridStr);
+            
+            document.getElementById('main-clock').textContent = madridDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+            const currentDec = madridDate.getHours() + (madridDate.getMinutes() / 60) + (madridDate.getSeconds() / 3600);
+            document.getElementById('current-time-line').style.left = `${(currentDec / 24) * 100}%`;
+            document.getElementById('current-time-label').textContent = madridDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+            const tbody = document.getElementById('market-table-body');
+            tbody.innerHTML = '';
+            markets.forEach(market => {
+                let openDate = new Date(madridDate); openDate.setHours(market.openHour, market.openMin, 0, 0);
+                let closeDate = new Date(madridDate); closeDate.setHours(market.closeHour, market.closeMin, 0, 0);
+                if (closeDate < openDate) closeDate.setDate(closeDate.getDate() + 1);
+
+                let isOpen = (madridDate >= openDate && madridDate < closeDate);
+                let countdownStr = isOpen ? `<span class="status-open">En Operación</span>` : `<span class="countdown">⏱️ ${formatCountdown(getNextTime(madridDate, market.openHour, market.openMin).getTime() - madridDate.getTime())}</span>`;
+                let statusHtml = isOpen ? `<span class="status-open">● ABIERTA</span>` : `<span class="status-closed">● CERRADA</span>`;
+
+                tbody.innerHTML += `<tr>
+                    <td data-label="Mercado"><strong>${market.name}</strong></td>
+                    <td data-label="Estado">${statusHtml}</td>
+                    <td data-label="Apertura" class="time-cell">${market.openHour.toString().padStart(2, '0')}:${market.openMin.toString().padStart(2, '0')}</td>
+                    <td data-label="Cierre" class="time-cell">${market.closeHour.toString().padStart(2, '0')}:${market.closeMin.toString().padStart(2, '0')}</td>
+                    <td data-label="Tiempo Restante">${countdownStr}</td>
+                </tr>`;
+            });
+        }
+
+
+        // --- LOGIC FOR FORWARD TESTING ---
+        async function fetchTradesData() {
+            try {
+                const response = await fetch('sniper_trades.json?t=' + new Date().getTime());
+                if (!response.ok) return;
+                const data = await response.json();
+                
+                document.getElementById('ft-winrate').textContent = `${data.stats.win_rate}%`;
+                document.getElementById('ft-stats-summary').innerHTML = `WIN: <span style="color:#4ade80">${data.stats.wins}</span> | LOSS: <span style="color:#ef4444">${data.stats.losses}</span><br>TOTAL: ${data.stats.total}`;
+                
+                const openBody = document.getElementById('ft-open-body');
+                if (data.open_trades.length > 0) {
+                    openBody.innerHTML = data.open_trades.map(t => `
+                        <tr style="background: rgba(250,204,21,0.05)">
+                            <td style="font-weight:bold">${t.symbol}</td>
+                            <td style="color: #4ade80; font-family: var(--font-mono); font-weight: bold;">${t.timeframe}</td>
+                            <td style="color:${t.direction==='LONG'?'#4ade80':'#ef4444'}">${t.direction}</td>
+                            <td class="time-cell">$${t.entry_price}</td>
+                            <td class="time-cell">${t.entry_time}</td>
+                            <td style="color:#4ade80">$${t.take_profit}</td>
+                            <td style="color:#ef4444">$${t.stop_loss}</td>
+                            <td class="ft-status-open">OPEN</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    openBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:gray">No hay operaciones abiertas.</td></tr>';
+                }
+                
+                const closedBody = document.getElementById('ft-closed-body');
+                if (data.closed_trades.length > 0) {
+                    closedBody.innerHTML = data.closed_trades.map(t => `
+                        <tr>
+                            <td style="font-weight:bold">${t.symbol}</td>
+                            <td style="color: #4ade80; font-family: var(--font-mono); font-weight: bold;">${t.timeframe}</td>
+                            <td style="color:${t.direction==='LONG'?'#4ade80':'#ef4444'}">${t.direction}</td>
+                            <td class="time-cell">$${t.entry_price}</td>
+                            <td class="time-cell">$${t.exit_price}</td>
+                            <td class="time-cell">${t.exit_time}</td>
+                            <td class="${t.status === 'WIN' ? 'status-win' : 'status-loss'}">${t.status}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    closedBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:gray">No hay operaciones cerradas.</td></tr>';
+                }
+            } catch (error) {
+                // Posiblemente no exista el archivo aun
+            }
+        }
+
+        // INIT
+
+        initAlgorithmicHeatmap();
+        updateDashboard();
+        fetchSniperData(); // Fetch immediate
+        fetchTradesData(); // Fetch immediate
+        
+        // LOOPS
+        setInterval(updateDashboard, 1000);
+        setInterval(fetchSniperData, 2000); // Fetch sniper data every 2 seconds
+        setInterval(fetchTradesData, 2000); // Fetch trades data every 2 seconds
+    </script>
+</body>
+</html>
