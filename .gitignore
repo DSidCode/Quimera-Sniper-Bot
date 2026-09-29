@@ -25,19 +25,48 @@ wheels/
 venv/
 ENV/
 
-# Quimera Sniper Bot Data (¡Ocultar información de trading real!)
+# ============================================
+# 🔒 DATOS SENSIBLES — NUNCA subir al repo
+# ============================================
+
+# PDFs (informes de trading, estados de cuenta, enciclopedias personales)
+*.pdf
+
+# Videos (WhatsApp, grabaciones personales)
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Datos de trading en JSON
+sniper_data.json
+sniper_trades.json
 *.json
 !package.json
 !package-lock.json
-sniper_data.json
-sniper_trades.json
 
+# Registros personales de operaciones
+registro_operaciones*.md
+informe_gestion*.md
+
+# Análisis personales y conclusiones
+CONCLUSIONES_ANALISIS.md
+analisis_macro_*.md
+calendario_mercados.md
+horarios_mercado_madrid.md
+estado_mercado.md
+changelog_trading.md
+
+# ============================================
 # IDEs
+# ============================================
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# ============================================
 # OS Files
+# ============================================
 .DS_Store
 Thumbs.db
